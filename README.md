@@ -11,9 +11,8 @@ It allows users to register, add API endpoints, and monitor their availability a
 - User authentication using JWT
 - Plan-based endpoint limits
 - API uptime monitoring with configurable intervals
-- Immediate health check on endpoint creation
 - Periodic background uptime checks
-- Live dashboard showing endpoint status (UP / DOWN / UNKNOWN)
+- Live dashboard with endpoint status
 - Endpoint creation and deletion
 - Secure, per-user data access
 
