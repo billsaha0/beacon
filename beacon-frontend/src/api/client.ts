@@ -16,13 +16,6 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response,
     (error) => {
-        // const hastoken = localStorage.getItem("token");
-        
-        // if (error.response?.status === 401 && hastoken) {
-        //     localStorage.removeItem("token");
-        //     window.location.href = "/login";
-        // }
-
         return Promise.reject(error);
     }
 );
