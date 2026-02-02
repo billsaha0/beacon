@@ -8,7 +8,7 @@ if (!connectionString) {
     throw new Error("DATABASE_URL is not defined")
 }
 
-const caCert = process.env.DATABASE_CA;
+const caCert = Buffer.from(process.env.DATABASE_CA_BASE64!, "base64").toString("utf-8");
 
 const adapter = new PrismaPg({
     connectionString,
