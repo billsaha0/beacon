@@ -1,0 +1,93 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id String @id @default(uuid())
+  email String @unique
+  passwordHash String
+  role Role @default(USER)
+  createdAt DateTime @default(now())
+  
+  subscription Subscription?
+  endpoints Endpoint[]
+}
+
+model Plan {
+  id String @id @default(uuid())
+  name String @unique
+  price Int
+  maxEndpoints Int
+  checkInterval Int
+  retentionHrs Int
+  createdAt DateTime @default(now())
+  
+  subscriptions Subscription[]
+}
+
+model Subscription {
+  id String @id @default(uuid())
+  userId String @unique
+  planId String
+  status SubscriptionStatus @default(ACTIVE)
+  startedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+  plan Plan @relation(fields: [planId], references: [id])
+}
+
+model Endpoint {
+  id String @id @default(uuid())
+  userId String
+  name String
+  url String
+  method HttpMethod @default(GET)
+  isActive Boolean @default(true)
+  createdAt DateTime @default(now())
+  lastCheckedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id])
+  checks CheckResult[]
+
+  @@unique([userId, url, method])
+}
+
+model CheckResult {
+  id String @id @default(uuid())
+  endpointId String
+  statusCode Int
+  responseMs Int
+  isUp Boolean
+  checkedAt DateTime @default(now())
+
+  endpoint Endpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELLED
+  PAST_DUE
+}
+
+enum HttpMethod {
+  GET
+  POST
+  PUT
+  DELETE
+}
