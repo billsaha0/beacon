@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../api/client";
 
 export default function Login({ onLogin }: { onLogin: () => void }) {
@@ -53,6 +53,13 @@ export default function Login({ onLogin }: { onLogin: () => void }) {
                 <button type="submit" className="w-full bg-blue-600 py-2 rounded text-white">
                     Sign in
                 </button>
+
+                <p className="text-sm text-gray-400 mt-4 text-center">
+                    Don’t have an account?{" "}
+                    <Link to="/signup" className="text-blue-400 hover:underline">
+                        Sign up
+                    </Link>
+                </p>
 
             </form>
         </div>

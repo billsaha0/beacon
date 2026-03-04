@@ -3,6 +3,7 @@ import './App.css'
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import { useState } from 'react';
+import Signup from './pages/Signup';
 
 
 function App() {
@@ -13,13 +14,21 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/login"
-      element={
+      <Route path="/login" element={
         isAuthed ? <Navigate to="/" /> : <Login onLogin={() => setIsAuthed(true)} />
         }
       />
     
-      <Route path="/" element={isAuthed ? <Dashboard /> : <Navigate to="/login" />} />
+      <Route path="/signup" element={
+        isAuthed ? <Navigate to="/" /> : <Signup onSignup={() => setIsAuthed(true)} />
+        }
+      />
+
+      <Route path="/" element={
+        isAuthed ? <Dashboard onLogout={() => setIsAuthed(false)} /> : <Navigate to="/login" />
+        }
+      />
+      
     </Routes>
   )
 }
