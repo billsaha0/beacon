@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import api from "../api/client";
 import CreateEndpointForm from "../components/CreateEndpointForm";
 import { useNavigate } from "react-router-dom";
+import UptimeChart from "../components/UptimeChart";
 
 type Endpoint = {
     id: string;
@@ -30,6 +31,11 @@ type MeResponse = {
   } | null;
 };
 
+type Check = {
+    checkedAt: string;
+    responseMs: number;
+};
+
 export default function Dashboard({ onLogout }: { onLogout: () => void }) {
     const [endpoints, setEndpoints] = useState<Endpoint[]>([]);
     const [statuses, setStatuses] = useState<Record<string, EndpointStatus>>({});
@@ -38,6 +44,8 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
     const [showForm, setShowForm] = useState(false);
     const [me, setMe] = useState<MeResponse | null>(null);
     const endpointsRef = useRef<Endpoint[]>([]);
+    const [checks, setChecks] = useState<Record<string, Check[]>>({});
+    const [loadingChecks, setLoadingChecks] = useState<Record<string, boolean>>({});
     const navigate = useNavigate();
 
     function handleLogout() {
@@ -92,6 +100,40 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
         }
         catch (e) {
             console.error("Failed to fetch status", e);
+        }
+    }
+
+    async function fetchChecks(endpointId: string) {
+        if (checks[endpointId]) {
+            setChecks(prev => {
+                const copy = { ...prev };
+                delete copy[endpointId];
+                return copy;
+            });
+            return;
+        }
+
+        try {
+            setLoadingChecks(prev => ({
+                ...prev,
+                [endpointId]: true
+            }));
+
+            const res = await api.get(`/endpoints/${endpointId}/checks`);
+
+            setChecks(prev => ({
+                ...prev,
+                [endpointId]: res.data
+            }));
+        }
+        catch (e) {
+            console.error("Failed to fetch checks:", e)
+        }
+        finally {
+            setLoadingChecks(prev => ({
+                ...prev,
+                [endpointId]: false
+            }));
         }
     }
 
@@ -223,30 +265,73 @@ export default function Dashboard({ onLogout }: { onLogout: () => void }) {
                         const status = statuses[ep.id]?.status ?? "UNKNOWN";
 
                         return (
-                            <div key={ep.id} className="bg-gray-800 p-4 rounded flex items-center justify-between gap-4">
-                                <div>
-                                    <p className="font-medium">{ep.name}</p>
-                                    <p className="text-sm text-gray-400">{ep.method} {ep.url}</p>
+                            <div key={ep.id} className="bg-gray-800 p-5 rounded-lg shadow-md border border-gray-700">
+
+                                <div className="flex items-start justify-between">
+
+                                    <div className="space-y-2">
+                                        
+                                        <p className="font-semibold text-lg text-white">{ep.name}</p>
+                                        
+                                        <div className="flex items-center gap-3 text-sm">
+                                            
+                                            <span className="bg-blue-600 text-white px-2 py-0.5 rounded text-xs font-semibold">
+                                                {ep.method}
+                                            </span>
+
+                                            <span className="text-gray-300 break-all">
+                                                {ep.url}
+                                            </span>
+                                        
+                                        </div>
+
+                                    </div>
+
+                                    <div className="flex items-center gap-4">
+                                        <span
+                                            className={`px-3 py-1 rounded text-sm font-medium ${
+                                                status === "UP"
+                                                ? "bg-green-500/20 text-green-400"
+                                                : status === "DOWN"
+                                                ? "bg-red-500/20 text-red-400"
+                                                : "bg-gray-500/20 text-gray-300"
+                                            }`}
+                                            >
+                                            ● {status}
+                                        </span>
+                                        
+                                        <button
+                                            type="button"
+                                            onClick={() => deleteEndpoint(ep.id)}
+                                            className="text-red-400 hover:text-red-300 text-sm"
+                                            title="Delete Endpoint"
+                                        >
+                                            Delete
+                                        </button>
+
+                                        <button
+                                            onClick={() => fetchChecks(ep.id)}
+                                            className="text-blue-400 hover:text-blue-300 text-sm"
+                                        >
+                                            {checks[ep.id] ? "Hide History" : "View History"}
+                                        </button>
+
+                                    </div>
+
                                 </div>
-                                <span
-                                    className={`px-3 py-1 rounded text-sm font-medium ${
-                                        status === "UP"
-                                        ? "bg-green-500/20 text-green-400"
-                                        : status === "DOWN"
-                                        ? "bg-red-500/20 text-red-400"
-                                        : "bg-gray-500/20 text-gray-300"
-                                    }`}
-                                    >
-                                    {status}
-                                </span>
-                                <button
-                                    type="button"
-                                    onClick={() => deleteEndpoint(ep.id)}
-                                    className="text-red-400 hover:text-red-300 text-sm"
-                                    title="Delete Endpoint"
-                                >
-                                    Delete Endpoint
-                                </button>
+
+                                {loadingChecks[ep.id] && (
+                                    <p className="text-sm text-gray-400 mt-2">
+                                        Loading History...
+                                    </p>
+                                )}
+
+                                {checks[ep.id] && (
+                                    <div className="mt-4">
+                                        <UptimeChart data={checks[ep.id]} />
+                                    </div>
+                                )}
+
                             </div>
                         );
                     })}
